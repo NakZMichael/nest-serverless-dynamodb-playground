@@ -20,8 +20,6 @@ import { NotificationModule } from './notification/notification.module';
       local: process.env.IS_DDB_LOCAL === 'true',
       aws: {
         region: process.env.REGION,
-        // accessKeyId: 'fakeAccessKeyId',
-        // secretAccessKey: 'fakeSecretAccessKey',
       },
       model: {
         create: false,
