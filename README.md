@@ -56,17 +56,64 @@ $ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
-
-# create a new user
-# example command
-$ curl -X POST localhost:3000/dev/user/  -H 'Content-Type: application/json' -d '{"hello":"world"}'
-
-# fetch a user
-$ curl localhost:3000/dev/user/<USER ID> | json_pp      
-
-# fetch all users
-$ curl localhost:3000/dev/user/ | json_pp      
+  
 ```
+
+## GraphQL Endpoint Test
+
+- offline: http://localhost:3000/dev/graphql
+- local: http://localhost:3000/graphql
+- AWS: https://<your_aws_deployment_id>.execute-api.<your_aws_region>.amazonaws.com/dev/graphql
+
+```graphql
+mutation {
+  createNotification(
+    input: { targetId: "device1", userId: "user1", content: "Hello World" }
+  ) {
+    id
+  }
+}
+```
+
+```graphql
+query {
+  notificationByUserId(userId: "user1") {
+    id
+    targetId
+    userId
+    content
+    createAt
+  }
+}
+```
+
+```graphql
+query {
+  notificationByTargetId(targetId: "device1") {
+    id
+    targetId
+    userId
+    content
+    createAt
+  }
+}
+```
+
+```graphql
+mutation {
+  updateNotification(
+    id: "1ca7726e-0af8-4ff1-8ef1-4eae97377162"
+    input: { status: Deleted }
+  ) {
+    id
+    targetId
+    userId
+    content
+    createAt
+  }
+}
+```
+
 
 ## Support
 

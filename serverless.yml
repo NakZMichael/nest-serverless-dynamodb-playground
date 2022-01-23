@@ -1,5 +1,28 @@
-service: 
-  name: serverless-nestjs
+service: serverless-nestjs
+
+
+# profile: hobby_default
+provider:
+  name: aws
+  runtime: nodejs14.x
+  lambdaHashingVersion: '20201221'
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  environment:
+    SERVICE: ${self:service}
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    NO_COLOR: ${env:NO_COLOR, 'true'}
+  apiGateway:
+    shouldStartNameWithService: true
+  iamRoleStatements:
+    - ${file(resources/iam.yml)}
+
+# remove the unnecessary packages to keep small upload size
+package:
+  exclude:
+    - node_modules/typescript/**
+    - node_modules/@types/**
 
 plugins:
    - serverless-dynamodb-local
@@ -7,42 +30,27 @@ plugins:
    - serverless-plugin-optimize
    - serverless-offline
 
-
-provider:
-  name: aws
-  runtime: nodejs14.x
-  profile: hobby_default
-  stage: ${opt:stage,'dev'}
-  region: ${opt:region, 'ap-northeast-1'}
-  lambdaHashingVersion: '20201221'
-  iamRoleStatements: ${file(iam/usersTableIAM.yml)}
-  environment:
-    USERS_TABLE_NAME: ${self:custom.usersTable.name}
-    DYNAMODB_ENDPOINT: ${self:custom.endpoints.dynamodbURL}
-
-resources:
-  Resources:
-    usersTable: ${file(resources/usersTable.yml):usersTable}
-
-functions:
-  app:
-   handler: src/lambda.handler
-   events:
-    - http:
-       method: ANY
-       path: /
-    - http:
-       method: ANY
-       path: '{proxy+}'
-
 custom:
   dynamodb:
     stages:
       - ${self:provider.stage}
     start:
+      port: 8000
+      inMemory: true
       migrate: true
-  endpoints:
-    dynamodbURL: 'http://localhost:8000'
-  usersTable:
-    name: ${self:provider.stage}-users
-    arn: !GetAtt usersTable.Arn
+      seed: false
+
+
+functions:
+  index-function:
+    handler: src/index.handler
+    events:
+      - http:
+          cors: true
+          path: '{proxy+}'
+          method: any
+
+
+
+resources:
+  - ${file(resources/dynamodb.yml)}

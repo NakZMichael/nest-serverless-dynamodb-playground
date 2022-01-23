@@ -1,11 +1,35 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { UserModule } from './user/user.module';
+import { ConfigModule } from '@nestjs/config';
+import { GraphQLModule } from '@nestjs/graphql';
+import { DynamooseModule } from 'nestjs-dynamoose';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
-  imports: [UserModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot(),
+    GraphQLModule.forRoot({
+      autoSchemaFile: true,
+      playground: {
+        endpoint:
+          process.env.IS_NOT_SLS === 'true'
+            ? '/graphql'
+            : `/${process.env.STAGE}/graphql`,
+      },
+    }),
+    DynamooseModule.forRoot({
+      local: process.env.IS_DDB_LOCAL === 'true',
+      aws: {
+        region: process.env.REGION,
+        // accessKeyId: 'fakeAccessKeyId',
+        // secretAccessKey: 'fakeSecretAccessKey',
+      },
+      model: {
+        create: false,
+        prefix: `${process.env.SERVICE}-${process.env.STAGE}-`,
+        suffix: '-table',
+      },
+    }),
+    NotificationModule,
+  ],
 })
 export class AppModule {}
