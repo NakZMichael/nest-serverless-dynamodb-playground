@@ -1,0 +1,48 @@
+service: 
+  name: serverless-nestjs
+
+plugins:
+   - serverless-dynamodb-local
+   - 'serverless-plugin-typescript'
+   - serverless-plugin-optimize
+   - serverless-offline
+
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  profile: hobby_default
+  stage: ${opt:stage,'dev'}
+  region: ${opt:region, 'ap-northeast-1'}
+  lambdaHashingVersion: '20201221'
+  iamRoleStatements: ${file(iam/usersTableIAM.yml)}
+  environment:
+    USERS_TABLE_NAME: ${self:custom.usersTable.name}
+    DYNAMODB_ENDPOINT: ${self:custom.endpoints.dynamodbURL}
+
+resources:
+  Resources:
+    usersTable: ${file(resources/usersTable.yml):usersTable}
+
+functions:
+  app:
+   handler: src/lambda.handler
+   events:
+    - http:
+       method: ANY
+       path: /
+    - http:
+       method: ANY
+       path: '{proxy+}'
+
+custom:
+  dynamodb:
+    stages:
+      - ${self:provider.stage}
+    start:
+      migrate: true
+  endpoints:
+    dynamodbURL: 'http://localhost:8000'
+  usersTable:
+    name: ${self:provider.stage}-users
+    arn: !GetAtt usersTable.Arn
